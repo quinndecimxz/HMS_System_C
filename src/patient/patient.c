@@ -4,11 +4,13 @@
 #include <ctype.h>
 #include <time.h>
 #include <stdlib.h>
+#include "src/doctor/doctor.h"
 
 #include "src/common/common.h"
 #include "src/id_manager/id_manager.h"
 #include "src/VisitLog/visitlog.h"
 #include "patient.h"
+#include "doctor.h"
 
 Patient patients[MAX_PATIENTS];
 int patient_counter = 0;
@@ -104,6 +106,7 @@ void addPatient()
 {
     char choice[10];
     int sub_choice;
+    loadDoctorsFromFile();
     do
     {
         sub_choice = inputInt("Want to : \n1.Add patient \n2.<<<<Go Back\n\nConfirm by Choice:");
@@ -239,6 +242,33 @@ void addPatient()
             inputValidatedBloodGroup(new_patient.p_blood_group, sizeof(new_patient.p_blood_group));
             char cnic_to_check[15] = "";
 
+            printf("\nAvailable Doctors:\n");
+            printf("ID\tName\t\tSpecialization\t\tCurrent/Max Patients\tStatus\n");
+            for (int i = 0; i < doctor_counter; i++) {
+                if (doctors[i].status == DOCTOR_ACTIVE && doctors[i].current_patients < MAX_ASSIGNED_PATIENTS) {
+                    printf("%d\t%s\t\t%s\t\t%d/%d\t\tActive\n", 
+                        doctors[i].d_id, 
+                        doctors[i].d_name, 
+                        doctors[i].d_specialization, 
+                        doctors[i].current_patients);
+                }
+            }
+            int assignedDoctorId;
+            printf("Enter the ID of the doctor to assign: ");
+            scanf("%d", &assignedDoctorId);
+            new_patient.assigned_doctor_id = assignedDoctorId;
+            
+            for (int i = 0; i < doctor_counter; i++) {
+                if (doctors[i].d_id == assignedDoctorId) {
+                    doctors[i].current_patients++;
+                    break;
+                }
+            }
+            saveDoctorsToFile();
+
+
+
+
             // Handle CNIC based on age
             if (new_patient.p_age < 18)
             {
@@ -347,6 +377,7 @@ void addPatient()
                     printf("Patient %s (%s) has been successfully reactivated!\n",
                            patients[deactive_patient_index].p_name, patients[deactive_patient_index].patient_id);
                 }
+                    
 
                 printf("Do you want to add another patient or go back to the main menu?\n");
                 int go_back_choice = inputInt("1. Go back to main menu\n2. Add new patient\nEnter your choice: ");
@@ -878,7 +909,7 @@ void displayActivePatient()
     fileCheck(file);
     printf("\n List of All Patients:\n");
     printf("-----------------------------------------------------------------------------------------------------------------------------\n");
-    printf("| %-8s | %-20s | %-3s | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s |\n", "PID", "Name", "Age", "Gender", "Blood Group", "Disease", "Contact", "CNIC", "Minor", "Registration D&T");
+    printf("| %-8s | %-20s | %-3s | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s | %-16d |\n", "PID", "Name", "Age", "Gender", "Blood Group", "Disease", "Contact", "CNIC", "Minor", "Registration D&T", "Assigned Doctor ID");
     printf("-----------------------------------------------------------------------------------------------------------------------------\n");
     for (int i = 0; i < patient_counter; i++)
     {
@@ -887,11 +918,12 @@ void displayActivePatient()
             time_t currentTime = time(NULL);
             char reg_time_str[25];
             formatRegistrationTime(currentTime, reg_time_str, sizeof(reg_time_str));
-            printf("| %-8s | %-20s | %-3d | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s |\n",
+            printf("| %-8s | %-20s | %-3d | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s | %-16d |\n",
                    patients[i].patient_id, patients[i].p_name, patients[i].p_age, patients[i].p_gender,
                    patients[i].p_blood_group, patients[i].p_disease, patients[i].p_contact_num,
                    patients[i].is_minor ? (strlen(patients[i].guardian_cnic) ? patients[i].guardian_cnic : "-") : patients[i].p_cnic,
-                   patients[i].is_minor ? "Minor" : "Adult", reg_time_str);
+                   patients[i].is_minor ? "Minor" : "Adult", reg_time_str,
+                   patients[i].assigned_doctor_id);
         }
     }
     printf("-----------------------------------------------------------------------------------------------------------------------------\n");
@@ -905,7 +937,7 @@ void displayDeactivePatient()
     fileCheck(file);
     printf("\n List of Deactive Patients:\n");
     printf("-----------------------------------------------------------------------------------------------------------------------------\n");
-    printf("| %-8s | %-20s | %-3s | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s |\n", "PID", "Name", "Age", "Gender", "Blood Group", "Disease", "Contact", "CNIC", "Minor", "Registration D&T");
+    printf("| %-8s | %-20s | %-3s | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s | %-16d |\n", "PID", "Name", "Age", "Gender", "Blood Group", "Disease", "Contact", "CNIC", "Minor", "Registration D&T" , "Assigned Patient ID");
     printf("-----------------------------------------------------------------------------------------------------------------------------\n");
     for (int i = 0; i < patient_counter; i++)
     {
@@ -914,11 +946,12 @@ void displayDeactivePatient()
             char reg_time_str[25];
             time_t currentTime = time(NULL);
             formatRegistrationTime(currentTime, reg_time_str, sizeof(reg_time_str));
-            printf("| %-8s | %-20s | %-3d | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s |\n",
+            printf("| %-8s | %-20s | %-3d | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s | %-16d |\n",
                    patients[i].patient_id, patients[i].p_name, patients[i].p_age, patients[i].p_gender,
                    patients[i].p_blood_group, patients[i].p_disease, patients[i].p_contact_num,
                    patients[i].is_minor ? (strlen(patients[i].guardian_cnic) ? patients[i].guardian_cnic : "-") : patients[i].p_cnic,
-                   patients[i].is_minor ? "Minor" : "Adult", reg_time_str);
+                   patients[i].is_minor ? "Minor" : "Adult", reg_time_str,
+                   patients[i].assigned_doctor_id);
         }
     }
     printf("-----------------------------------------------------------------------------------------------------------------------------\n");
@@ -931,14 +964,14 @@ void displayAllPatient()
     fileCheck(file);
     printf("\n List of All Patients:\n");
     printf("-----------------------------------------------------------------------------------------------------------------------------\n");
-    printf("| %-8s | %-20s | %-3s | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s |\n", "PID", "Name", "Age", "Gender", "Blood Group", "Disease", "Contact", "CNIC", "Minor", "Registration D&T");
+    printf("| %-8s | %-20s | %-3s | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s | %-16d |\n", "PID", "Name", "Age", "Gender", "Blood Group", "Disease", "Contact", "CNIC", "Minor", "Registration D&T" , "Assigned Doctor ID");
     printf("-----------------------------------------------------------------------------------------------------------------------------\n");
     for (int i = 0; i < patient_counter; i++)
     {
         char reg_time_str[25];
         time_t current_time = time(NULL);
         formatRegistrationTime(current_time, reg_time_str, sizeof(reg_time_str));
-        printf("| %-8s | %-20s | %-3d | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s |\n",
+        printf("| %-8s | %-20s | %-3d | %-6s | %-15s | %-15s | %-15s | %-15s | %-6s | %-19s | %-16d |\n",
                patients[i].patient_id,
                patients[i].p_name,
                patients[i].p_age,
@@ -948,7 +981,8 @@ void displayAllPatient()
                patients[i].p_contact_num,
                patients[i].is_minor ? (strlen(patients[i].guardian_cnic) ? patients[i].guardian_cnic : "-") : patients[i].p_cnic,
                patients[i].is_minor ? "Minor" : "Adult",
-               reg_time_str);
+               reg_time_str,
+            patients[i].assigned_doctor_id);
     }
     printf("-----------------------------------------------------------------------------------------------------------------------------\n");
     if (patient_counter == 0)
@@ -985,11 +1019,11 @@ void savePatientsToFile()
         return;
     }
 
-    fprintf(file2, "ID,Name,Age,Gender,Disease,Contact,CNIC,GuardianCNIC,BloodGroup,IsMinor,RegistrationTime,Status\n");
+    fprintf(file2, "ID,Name,Age,Gender,Disease,Contact,CNIC,GuardianCNIC,BloodGroup,IsMinor,RegistrationTime,Status,patient.assigned_doctor_id\n");
 
     for (int i = 0; i < patient_counter; i++)
     {
-        fprintf(file2, "%s,%s,%d,%s,%s,\"%s\",\"%s\",\"%s\",%s,%d,%lld,%d\n",
+        fprintf(file2, "%s,%s,%d,%s,%s,\"%s\",\"%s\",\"%s\",%s,%d,%lld,%d,%d\n",
                 patients[i].patient_id,
                 patients[i].p_name,
                 patients[i].p_age,
@@ -1001,7 +1035,8 @@ void savePatientsToFile()
                 patients[i].p_blood_group,
                 patients[i].is_minor,
                 patients[i].registration_time,
-                patients[i].status);
+                patients[i].status,
+                patients[i].assigned_doctor_id);
     }
     fclose(file2);
 }

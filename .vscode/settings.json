@@ -1,6 +1,6 @@
 {
   "code-runner.executorMap": {
-    "c": "cd 'D:/Programming/Github/HMS_System_C' && gcc -I. -Isrc -Isrc/patient -Isrc/doctor -Isrc/billing -Isrc/id_manager -Isrc/common -Wall -Wextra main.c src/patient/patient.c src/doctor/doctor.c src/billing/billing.c src/id_manager/id_manager.c src/common/common.c src/VisitLog/visitlog.c -o hms && ./hms"
+    "c": "C:/Users/Zain/Desktop/projects' && gcc -I. -Isrc -Isrc/patient -Isrc/doctor -Isrc/billing -Isrc/id_manager -Isrc/common -Wall -Wextra main.c src/patient/patient.c src/doctor/doctor.c src/billing/billing.c src/id_manager/id_manager.c src/common/common.c src/VisitLog/visitlog.c -o hms && ./hms"
   },
   "code-runner.runInTerminal": true,
   "code-runner.saveFileBeforeRun": true,

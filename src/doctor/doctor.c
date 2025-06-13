@@ -6,6 +6,7 @@
 #include "src/id_manager/id_manager.h"
 #include "src/VisitLog/visitlog.h"
 #include "doctor.h"
+#include "patient.h"
 
 // Core variables
 Doctor doctors[MAX_DOCTORS];
@@ -726,7 +727,7 @@ void displayDoctors()
     {
         printf("\n=== Display Doctors ===\n");
         printf("1. Display Active Doctors\n");
-        printf("2. Display Deactive Doctors\n");
+        printf("2. Display Unavailable Doctors\n");
         printf("3. Display All Doctors\n");
         printf("4. Go Back\n");
         choice = inputInt("Enter your choice: ");
